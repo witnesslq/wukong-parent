@@ -1,5 +1,7 @@
 package com.easemob.wukong.utils.cookie;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,8 +28,14 @@ public class CookieUtils {
     public static void saveCookie(HttpServletRequest request, HttpServletResponse response, String key, String value) {
         saveCookie(request, response, key, value, defaultMaxAge);
     }
+    public static void saveCookie(HttpServletRequest request, HttpServletResponse response, String key, JsonNode value) {
+        saveCookie(request, response, key, value, defaultMaxAge);
+    }
 
     public static void saveCookie(HttpServletRequest request, HttpServletResponse response, String key, String value, int maxAge) {
+        saveCookie(request,response,key,value,maxAge,defaultPath);
+    }
+    public static void saveCookie(HttpServletRequest request, HttpServletResponse response, String key, JsonNode value, int maxAge) {
         saveCookie(request,response,key,value,maxAge,defaultPath);
     }
 
@@ -36,6 +44,16 @@ public class CookieUtils {
         String domain = request.getServerName();
 
         Cookie cookie = new Cookie(key, value);
+        cookie.setMaxAge(maxAge);
+        cookie.setPath(path);
+        cookie.setDomain(domain);
+        response.addCookie(cookie);
+    }
+    public static void saveCookie(HttpServletRequest request,HttpServletResponse response, String key, JsonNode value, int maxAge, String path){
+
+        String domain = request.getServerName();
+
+        Cookie cookie = new Cookie(key, value.toString());
         cookie.setMaxAge(maxAge);
         cookie.setPath(path);
         cookie.setDomain(domain);
