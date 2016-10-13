@@ -24,6 +24,24 @@ public class JSONUtils {
     public static ObjectNode objectNode(){
         return objectMapper.createObjectNode();
     }
+    public static ObjectNode objectNode(String key, String value){
+        return objectMapper.createObjectNode().put(key,value);
+    }
+    public static ObjectNode objectNode(String key0, String value0,String key1, String value1){
+        return objectMapper.createObjectNode().put(key0,value0).put(key1,value1);
+    }
+    public static ObjectNode objectNode(String key0, String value0,String key1, String value1,String key2, String value2){
+        return objectMapper.createObjectNode().put(key0,value0).put(key1,value1).put(key2,value2);
+    }
+    public static ObjectNode objectNode(String key, int value){
+        return objectMapper.createObjectNode().putPOJO(key,value);
+    }
+    public static ObjectNode objectNode(String key0, int value0,String key1, int value1){
+        return objectMapper.createObjectNode().put(key0,value0).put(key1,value1);
+    }
+    public static ObjectNode objectNode(String key0, int value0,String key1, int value1,String key2, int value2){
+        return objectMapper.createObjectNode().put(key0,value0).put(key1,value1).put(key2,value2);
+    }
     public static ArrayNode arrayNode(){
         return objectMapper.createArrayNode();
     }

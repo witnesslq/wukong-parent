@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(using = EnumSerializer.class)
 public enum TaskType implements ITaskType {
 
-    SIMILAR(0, "similar", false, "标记两个句子是否相似"),
+    SIMILAR(1, "similar", false, "标记两个句子是否相似"),
     ;
 
     private int type;

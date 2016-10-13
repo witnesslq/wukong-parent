@@ -76,12 +76,12 @@ public class ResponseUtils {
     }
 
     public static  CommonResponse buildFailMessage(String message,String data){
-        return build(successCode,message,data);
+        return build(failCode,message,data);
     }
     public static  CommonResponse buildFailMessage(String message,JsonNode data){
-        return build(successCode,message,data);
+        return build(failCode,message,data);
     }
     public static  CommonResponse buildFailMessage(String message,Object data){
-        return build(successCode,message,data);
+        return build(failCode,message,data);
     }
 }

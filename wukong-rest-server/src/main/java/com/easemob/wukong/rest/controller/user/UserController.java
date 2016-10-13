@@ -8,6 +8,7 @@ import com.easemob.wukong.model.entity.user.User;
 import com.easemob.wukong.rest.controller.WuKongController;
 import com.easemob.wukong.services.user.AuthenticationService;
 import com.easemob.wukong.utils.cookie.CookieUtils;
+import com.easemob.wukong.utils.json.JSONUtils;
 import com.easemob.wukong.utils.response.ResponseUtils0;
 import com.easemob.wukong.utils.wukong.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,7 @@ public class UserController extends WuKongController {
         CommonResponse commonResponse = null;
         if(null!=user) {
             HttpSession session = request.getSession(true);
-            CookieUtils.saveCookie(request,response, COOKIE_USER,user.getId()+"", COOKIE_MAX_TIME);
+            CookieUtils.saveCookie(request,response, COOKIE_USER,JSONUtils.objectNode("userId",user.getId()), COOKIE_MAX_TIME);
             commonResponse = ResponseUtils.buildSuccessMessage("Login success.");
         }else {
             commonResponse = ResponseUtils.buildFailMessage("Login failed, please retry later.");
