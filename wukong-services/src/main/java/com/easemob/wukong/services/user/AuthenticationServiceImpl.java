@@ -7,6 +7,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 /**
  * Created by dongwentao on 16/9/25.
  */
@@ -18,23 +21,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public User login(LoginRegRequest loginRegRequest) {
-
-        User user = null;
-
-        if(StringUtils.isNotEmpty(loginRegRequest.getName())){
-            user = userRepository.findByName(loginRegRequest.getName());
-        }else if(StringUtils.isNotEmpty(loginRegRequest.getMobile())){
-            user = userRepository.findByMobile(loginRegRequest.getMobile());
-        }else if(StringUtils.isNotEmpty(loginRegRequest.getEmail())){
-            user = userRepository.findByEmail(loginRegRequest.getEmail());
+        if (loginRegRequest == null) {
+            return null;
         }
-
-        if (null != user && null != loginRegRequest.getPassword() && loginRegRequest.getPassword().equals(user.getPassword())) {
-            user.setPassword(null);
+        String userName = loginRegRequest.getName();
+        String password = loginRegRequest.getPassword();
+        User user = userRepository.findByName(userName);
+        if (user != null && password.equals(user.getPassword()) {
             return user;
         }
         return null;
+
     }
+
 
     @Override
     public User regist(LoginRegRequest loginRegRequest) {
@@ -53,5 +52,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean islogin(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return false;
+        }
+
     }
 }

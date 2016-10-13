@@ -8,6 +8,7 @@ import com.easemob.wukong.model.entity.user.User;
 import com.easemob.wukong.rest.controller.WuKongController;
 import com.easemob.wukong.services.user.AuthenticationService;
 import com.easemob.wukong.utils.cookie.CookieUtils;
+import com.easemob.wukong.utils.json.JSONUtils;
 import com.easemob.wukong.utils.response.ResponseUtils0;
 import com.easemob.wukong.utils.wukong.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +34,17 @@ public class UserController extends WuKongController {
 
     @RequestMapping(value = "login",method = {RequestMethod.POST,RequestMethod.GET})
     public ResponseEntity<IResponse> login(HttpServletRequest request, HttpServletResponse response, LoginRegRequest loginRegRequest){
-        User user = authenticationService.login(loginRegRequest);
+        User user  = authenticationService.login(loginRegRequest);
         CommonResponse commonResponse = null;
         if(null!=user) {
             HttpSession session = request.getSession(true);
+            session.setAttribute("userId",user.getId());
+            session.setAttribute("userName",user.getName());
+            session.setAttribute("userRole",user.getRole());
+            JSONUtils
+
+            CookieUtils.saveCookie(request,response, COOKIE_USER,+"", COOKIE_MAX_TIME);
+            CookieUtils.saveCookie(request,response, COOKIE_USER,user.getId()+"", COOKIE_MAX_TIME);
             CookieUtils.saveCookie(request,response, COOKIE_USER,user.getId()+"", COOKIE_MAX_TIME);
             commonResponse = ResponseUtils.buildSuccessMessage("Login success.");
         }else {

@@ -11,3 +11,5 @@ target
 .classpath
 logs
 *.log
+*.ipr
+*.iws

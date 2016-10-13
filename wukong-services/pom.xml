@@ -29,6 +29,10 @@
             <groupId>com.easemob.wukong</groupId>
             <artifactId>wukong-model</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+        </dependency>
 
     </dependencies>
 </project>
