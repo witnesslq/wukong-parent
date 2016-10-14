@@ -32,40 +32,35 @@ public class UserController extends WuKongController {
     @Autowired
     private AuthenticationService authenticationService;
 
-    @RequestMapping(value = "login",method = {RequestMethod.POST,RequestMethod.GET})
-    public ResponseEntity<IResponse> login(HttpServletRequest request, HttpServletResponse response, LoginRegRequest loginRegRequest){
-        User user  = authenticationService.login(loginRegRequest);
+    @RequestMapping(value = "login", method = {RequestMethod.POST, RequestMethod.GET})
+    public ResponseEntity<IResponse> login(HttpServletRequest request, HttpServletResponse response, LoginRegRequest loginRegRequest) {
+        User user = authenticationService.login(loginRegRequest);
         CommonResponse commonResponse = null;
-        if(null!=user) {
+        if (null != user) {
             HttpSession session = request.getSession(true);
-
-            session.setAttribute("userId",user.getId());
-            session.setAttribute("userName",user.getName());
-            session.setAttribute("userRole",user.getRole());
-            JSONUtils
-
-            CookieUtils.saveCookie(request,response, COOKIE_USER,+"", COOKIE_MAX_TIME);
-            CookieUtils.saveCookie(request,response, COOKIE_USER,user.getId()+"", COOKIE_MAX_TIME);
-            CookieUtils.saveCookie(request,response, COOKIE_USER,user.getId()+"", COOKIE_MAX_TIME);
-
-            CookieUtils.saveCookie(request,response, COOKIE_USER,JSONUtils.objectNode("userId",user.getId()), COOKIE_MAX_TIME);
-
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("userNamed", user.getName());
+            session.setAttribute("userRole", user.getRole());
+            System.out.println(JSONUtils.fromObject(user));
+            CookieUtils.saveCookie(request, response, COOKIE_USER, JSONUtils.objectNode("userId", user.getId()), COOKIE_MAX_TIME);
+            CookieUtils.saveCookie(request, response, COOKIE_USER, JSONUtils.objectNode("userNamed", user.getName()), COOKIE_MAX_TIME);
+            CookieUtils.saveCookie(request, response, COOKIE_USER, JSONUtils.objectNode("userRole", user.getRole()), COOKIE_MAX_TIME);
             commonResponse = ResponseUtils.buildSuccessMessage("Login success.");
-        }else {
-            commonResponse = ResponseUtils.buildFailMessage("Login failed, please retry later.");
+        } else {
+            commonResponse = ResponseUtils.buildFailMessage("Login failed, ple ase retry later.");
         }
         return ResponseUtils0.buildResponse(commonResponse);
     }
 
-    @RequestMapping(value = "regist",method = {RequestMethod.POST,RequestMethod.GET})
-    public ResponseEntity<IResponse>  regist(HttpServletRequest request,HttpServletResponse response, LoginRegRequest loginRegRequest){
+    @RequestMapping(value = "regist", method = {RequestMethod.POST, RequestMethod.GET})
+    public ResponseEntity<IResponse> regist(HttpServletRequest request, HttpServletResponse response, LoginRegRequest loginRegRequest) {
         User user = authenticationService.regist(loginRegRequest);
         CommonResponse commonResponse = null;
-        if(null!=user) {
+        if (null != user) {
             HttpSession session = request.getSession(true);
-            CookieUtils.saveCookie(request,response, COOKIE_USER,user.getId()+"", COOKIE_MAX_TIME);
+            CookieUtils.saveCookie(request, response, COOKIE_USER, user.getId() + "", COOKIE_MAX_TIME);
             commonResponse = ResponseUtils.buildSuccessMessage("Regist success.");
-        }else {
+        } else {
             commonResponse = ResponseUtils.buildFailMessage("Regist failed, please retry later.");
         }
         return ResponseUtils0.buildResponse(commonResponse);

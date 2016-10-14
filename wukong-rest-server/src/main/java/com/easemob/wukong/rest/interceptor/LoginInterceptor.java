@@ -3,7 +3,9 @@ package com.easemob.wukong.rest.interceptor;
 import com.easemob.wukong.model.annotation.IgnoreLogin;
 import com.easemob.wukong.model.annotation.Logined;
 import com.easemob.wukong.model.annotation.NotLogin;
+import com.easemob.wukong.services.user.AuthenticationService;
 import com.wukong.support.exception.StatusException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -18,6 +20,9 @@ import java.lang.reflect.Method;
 @Service
 public class LoginInterceptor extends AbstractInterceptor {
 
+    @Autowired
+    private AuthenticationService authenticationService;
+
     @Override
     protected PriorityType getPriorityType() {
         return PriorityType.login;
@@ -25,19 +30,20 @@ public class LoginInterceptor extends AbstractInterceptor {
 
     @Override
     protected boolean isForAction(Class<?> clazz, Method method) {
-        if(containsAnnotations(method.getAnnotations(), NotLogin.class)||containsAnnotations(method.getAnnotations(), IgnoreLogin.class)){
+        if (containsAnnotations(method.getAnnotations(), NotLogin.class) || containsAnnotations(method.getAnnotations(), IgnoreLogin.class)) {
             return false;
         }
-        if(!containsAnnotations(method.getAnnotations(), Logined.class)&&(containsAnnotations(clazz.getAnnotations(),NotLogin.class)||containsAnnotations(clazz.getAnnotations(),IgnoreLogin.class))) {
+        if (!containsAnnotations(method.getAnnotations(), Logined.class) && (containsAnnotations(clazz.getAnnotations(), NotLogin.class) || containsAnnotations(clazz.getAnnotations(), IgnoreLogin.class))) {
             return false;
         }
         return true;
     }
 
+    // TODO   验证登陆
     @Override
     protected boolean before(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        HttpSession session = request.getSession(false);
-        if(null==session){
+        boolean islogin = authenticationService.islogin(request);
+        if (!islogin) {
             throw new StatusException("Oops, Login required!");
         }
         return true;

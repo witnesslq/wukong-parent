@@ -27,7 +27,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String userName = loginRegRequest.getName();
         String password = loginRegRequest.getPassword();
         User user = userRepository.findByName(userName);
-        if (user != null && password.equals(user.getPassword()) {
+        if (user != null && password.equals(user.getPassword())) {
             return user;
         }
         return null;
@@ -60,6 +60,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (session == null) {
             return false;
         }
-
+        return  false;
     }
 }
