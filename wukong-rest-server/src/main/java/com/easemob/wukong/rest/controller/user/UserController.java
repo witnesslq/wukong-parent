@@ -47,7 +47,7 @@ public class UserController extends WuKongController {
             CookieUtils.saveCookie(request, response, COOKIE_USER, JSONUtils.objectNode("userRole", user.getRole()), COOKIE_MAX_TIME);
             commonResponse = ResponseUtils.buildSuccessMessage("Login success.");
         } else {
-            commonResponse = ResponseUtils.buildFailMessage("Login failed, ple ase retry later.");
+            commonResponse = ResponseUtils.buildFailMessage("Login failed, please retry later.");
         }
         return ResponseUtils0.buildResponse(commonResponse);
     }
