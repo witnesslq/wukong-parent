@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Created by dongwentao on 16/9/30.
  */
-@Slf4j
 public class ResponseUtils {
 
     private static final int successCode = 0;

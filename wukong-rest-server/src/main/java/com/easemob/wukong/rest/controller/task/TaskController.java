@@ -14,8 +14,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.DigestUtils;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * Created by dongwentao on 16/9/27.
@@ -41,6 +44,16 @@ public class TaskController extends WuKongController {
         BeanUtils.copyProperties(taskRequest,task);
         task.setTaskId(DigestUtils.md5DigestAsHex(task.getTaskBody().getBytes()));
         Task saveTask = taskService.save(task);
-        return ResponseUtils0.buildResponse(ResponseUtils.buildSuccess(saveTask));
+        return ResponseUtils0.buildResponse(ResponseUtils.buildSuccessMessage("import success"));
+    }
+    @RequestMapping("/importlist")
+    public ResponseEntity<IResponse> importTask(@RequestBody List<TaskRequest> taskRequestList){
+        Task task = new Task();
+        for (TaskRequest taskRequest:taskRequestList) {
+            BeanUtils.copyProperties(taskRequest, task);
+            task.setTaskId(DigestUtils.md5DigestAsHex(task.getTaskBody().getBytes()));
+            Task saveTask = taskService.save(task);
+        }
+        return ResponseUtils0.buildResponse(ResponseUtils.buildSuccessMessage("importlist success"));
     }
 }

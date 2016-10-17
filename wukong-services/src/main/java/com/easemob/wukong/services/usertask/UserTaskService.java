@@ -11,4 +11,5 @@ import java.util.List;
 public interface UserTaskService {
     List<UserTask> getUserTask(UserTaskRequest userTaskRequest);
     UserTask save(UserTaskRequest userTaskRequest);
+    boolean update(UserTaskRequest userTaskRequest);
 }
