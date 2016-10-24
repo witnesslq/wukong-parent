@@ -1,5 +1,6 @@
 package com.easemob.wukong.utils.json;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,5 +63,23 @@ public class JSONUtils {
             e.printStackTrace();
         }
         return NullNode.instance;
+    }
+
+    // json to bean
+    public static <T> T toBean(JsonParser jp, Class<T> valueType){
+        try {
+            return objectMapper.readValue(jp,valueType);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    public static <T> T toBean(String jp, Class<T> valueType){
+        try {
+            return objectMapper.readValue(jp,valueType);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

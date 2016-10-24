@@ -7,6 +7,7 @@ public interface WuKongConstants {
 
     // ------------------ user ---------------------
     String COOKIE_USER="user";
+    String SESSION_USER="user";
 
     // ------------------ event --------------------
 

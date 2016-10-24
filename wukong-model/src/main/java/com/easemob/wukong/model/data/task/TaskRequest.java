@@ -11,4 +11,5 @@ public class TaskRequest extends CommonRequest {
     private String taskId;
     private int taskType;
     private String taskBody;
+    private int status;
 }

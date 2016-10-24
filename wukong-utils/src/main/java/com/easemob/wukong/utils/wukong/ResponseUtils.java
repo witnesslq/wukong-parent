@@ -4,7 +4,6 @@ import com.easemob.wukong.model.data.CommonResponse;
 import com.easemob.wukong.utils.json.JSONUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.NullNode;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Created by dongwentao on 16/9/30.

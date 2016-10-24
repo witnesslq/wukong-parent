@@ -20,6 +20,7 @@ public class Task implements Serializable{
     @Id
     private int taskType;
     private String taskBody;
+    private int status;
     private Date createTime;
     private Date updateTime;
 
