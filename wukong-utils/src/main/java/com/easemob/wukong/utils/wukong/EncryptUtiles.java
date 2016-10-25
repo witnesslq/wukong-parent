@@ -1,9 +1,7 @@
 package com.easemob.wukong.utils.wukong;
 
-import com.sun.org.apache.xml.internal.security.encryption.EncryptedType;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * Created by yangbs on 16-10-14.
