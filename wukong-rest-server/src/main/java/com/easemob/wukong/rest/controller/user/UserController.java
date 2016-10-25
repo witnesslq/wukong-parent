@@ -29,7 +29,7 @@ import javax.servlet.http.HttpSession;
  * Created by dongwentao on 16/9/27.
  */
 @RestController
-@RequestMapping("user")
+@RequestMapping("/datamark/user")
 @NotLogin
 @Slf4j
 public class UserController extends WuKongController {

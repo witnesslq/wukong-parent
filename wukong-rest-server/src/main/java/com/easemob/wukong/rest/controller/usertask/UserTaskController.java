@@ -25,7 +25,7 @@ import java.util.List;
  * Created by dongwentao on 16/9/27.
  */
 @RestController
-@RequestMapping("/usertask")
+@RequestMapping("/datamark/usertask")
 @Slf4j
 public class UserTaskController extends WuKongController {
 
