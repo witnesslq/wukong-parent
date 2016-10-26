@@ -10,4 +10,6 @@ import lombok.Data;
 public class SimilarTaskDescriptor extends TaskDescriptor {
     private String sentence1;
     private String sentence2;
+    private String similarity;
+    private String tenant;
 }

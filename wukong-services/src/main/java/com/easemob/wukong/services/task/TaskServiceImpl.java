@@ -9,6 +9,7 @@ import com.easemob.wukong.model.entity.task.Task;
 import com.easemob.wukong.persistence.task.TaskRepository;
 import com.easemob.wukong.utils.json.JSONUtils;
 import com.easemob.wukong.utils.wukong.ResponseUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
@@ -86,11 +87,11 @@ public class TaskServiceImpl implements TaskService{
         return taskRepository.updateTask(taskRequest.getTaskId(), taskRequest.getTaskType(), taskRequest.getStatus()) == 1 ? true : false;
     }
     private Task getTask(TaskRequest taskRequest) {
-        SimilarTaskDescriptor taskDescriptor = JSONUtils.toBean(taskRequest.getTaskBody(), SimilarTaskDescriptor.class);
-        if (null == taskDescriptor) return null;
+        JsonNode jsonNode = JSONUtils.fromObject(taskRequest.getTaskBody());
         Task task = null;
-        switch (TaskType.findByType(taskDescriptor.getTaskType())) {
+        switch (TaskType.findByType(jsonNode.get("taskType").asInt())) {
             case SIMILAR:
+                SimilarTaskDescriptor taskDescriptor = JSONUtils.toBean(taskRequest.getTaskBody(), SimilarTaskDescriptor.class);
                 task = new Task();
                 task.setTaskId(DigestUtils.md5DigestAsHex(taskRequest.getTaskBody().getBytes()));
                 task.setTaskType(taskDescriptor.getTaskType());
