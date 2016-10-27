@@ -7,11 +7,14 @@ import com.easemob.wukong.model.data.task.TaskType;
 import com.easemob.wukong.model.data.task.similar.SimilarTaskDescriptor;
 import com.easemob.wukong.model.entity.task.Task;
 import com.easemob.wukong.persistence.task.TaskRepository;
+import com.easemob.wukong.utils.date.DateUtils0;
 import com.easemob.wukong.utils.json.JSONUtils;
 import com.easemob.wukong.utils.wukong.ResponseUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -20,6 +23,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -53,29 +57,32 @@ public class TaskServiceImpl implements TaskService{
     }
 
     @Override
-    public List<Task>  getTasks(DispatchTaskRequest request){
+    public Page<Task> getTasks(DispatchTaskRequest request, Pageable pageable){
         return taskRepository.findAll(new Specification<Task>() {
 
             @Override
             public Predicate toPredicate(Root<Task> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+
+                List<Predicate> list = new ArrayList<>();
+
                 if (request.getTaskType() > 0) {
-                    query.where(cb.equal(root.get("taskType"), request.getTaskType()));
+                    list.add(cb.equal(root.get("taskType"), request.getTaskType()));
                 }
                 if (StringUtils.isNotEmpty(request.getTaskId())) {
-                    query.where(cb.equal(root.get("taskId"), request.getTaskId()));
+                    list.add(cb.equal(root.get("taskId"), request.getTaskId()));
                 }
                 if (request.getStatus() >= 0) {
-                    query.where(cb.equal(root.get("status"), request.getStatus()));
+                    list.add(cb.equal(root.get("status"), request.getStatus()));
                 }
                 if (request.getBeginDate() > 0) {
-                    query.where(cb.gt(root.get("createTime"), request.getBeginDate()));
+                    list.add(cb.greaterThanOrEqualTo(root.get("createTime"), DateUtils0.fromLong(request.getBeginDate())));
                 }
                 if (request.getEndDate() > 0) {
-                    query.where(cb.lt(root.get("createTime"), request.getEndDate()));
+                    list.add(cb.lessThan(root.get("createTime"), DateUtils0.fromLong(request.getEndDate())));
                 }
-                return query.getRestriction();
+                return cb.and(list.toArray(new Predicate[list.size()]));
             }
-        });
+        },pageable);
     }
 
     @Override

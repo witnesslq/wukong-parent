@@ -8,17 +8,17 @@ import lombok.Data;
 @Data
 public class UserDispatch{
     int userId;
-    int currentReceiveTask;
-    int maxReceiveTask = 100;
+    long currentReceiveTask;
+    long maxReceiveTask = 100;
 
     public UserDispatch(int userId) {
         this.userId=userId;
     }
-    public UserDispatch(int userId,int currentReceiveTask){
+    public UserDispatch(int userId,long currentReceiveTask){
         this.userId=userId;
         this.currentReceiveTask=currentReceiveTask;
     }
-    public UserDispatch(int userId,int currentReceiveTask,int maxReceiveTask){
+    public UserDispatch(int userId,long currentReceiveTask,long maxReceiveTask){
         this.userId=userId;
         this.currentReceiveTask=currentReceiveTask;
         this.maxReceiveTask=maxReceiveTask;

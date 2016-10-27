@@ -2,7 +2,6 @@ package com.easemob.wukong.services.usertask;
 
 import com.easemob.wukong.model.data.CommonResponse;
 import com.easemob.wukong.model.data.task.DispatchTaskRequest;
-import com.easemob.wukong.model.data.task.TaskRequest;
 import com.easemob.wukong.model.data.task.TaskStatus;
 import com.easemob.wukong.model.data.usertask.UserDispatch;
 import com.easemob.wukong.model.data.usertask.UserTaskRequest;
@@ -21,6 +20,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,92 +68,99 @@ public class UserTaskServiceImpl implements UserTaskService {
 
     @Override
     public CommonResponse dispatchTask(DispatchTaskRequest dispatchTaskRequest) {
-        List<Task> tasks = taskService.getTasks(dispatchTaskRequest);
+
         List<User> users = new ArrayList();
         if (dispatchTaskRequest.getUserId() > 0) {
             users.add(userService.getUserById(dispatchTaskRequest.getUserId()));
         } else {
             users = userService.getAllUser();
         }
-        if (CollectionUtils.isEmpty(tasks) || CollectionUtils.isEmpty(users)) {
-            return ResponseUtils.buildFailMessage("No dispatch, reason: no task or no user can receive the task.");
+
+        if (CollectionUtils.isEmpty(users)) {
+            return ResponseUtils.buildFailMessage("No dispatch, reason: no user can receive the task.");
         }
-        int maxReceiveTask = tasks.size() * 3 / users.size()+1;
+
+        PageRequest pageRequest = new PageRequest(dispatchTaskRequest.getPage(), dispatchTaskRequest.getSize() * users.size()); // 设置分页信息
+
+        Page<Task> tasks = taskService.getTasks(dispatchTaskRequest, pageRequest);
+
+        if (CollectionUtils.isEmpty(tasks.getContent())) {
+            return ResponseUtils.buildFailMessage("No dispatch, reason: no task can be dispatch.");
+        }
+
+        long maxReceiveTask = tasks.getContent().size() * dispatchTaskRequest.getPerTaskDispatchLimit() / users.size() + 1; // 理论上最多会给每个人分配的任务数量
+        long realMaxReceiveTask = maxReceiveTask > dispatchTaskRequest.getPerManMaxReceiveTask() ? dispatchTaskRequest.getPerManMaxReceiveTask() : maxReceiveTask; // 事实上最多会给每个人分配的任务数量
 
         List<UserDispatch> userDispatches = new ArrayList();
         for (User user : users) {
-            userDispatches.add(new UserDispatch(user.getId(),0, maxReceiveTask > 100 ? 100 : maxReceiveTask));
+            userDispatches.add(new UserDispatch(user.getId(), 0, realMaxReceiveTask));
         }
-        DispatchCount dispatchCount = new DispatchCount(userDispatches.size(), 0, 0,3,0,0);// 任务分派统计
-        $task:for (Task task : tasks) {
-            dispatchCount.tcIncrement(); // 任务数自增
-            dispatchCount.setCurrentTaskDispatchCount(0); // 重置当前任务分配数
-            // 同一个类型的task分派数量相同 默认3个; 同一个用户最多接收100个任务
-            if(!setTaskStatus(task)){ //无法设置对应的状态
-                continue ;
+
+        DispatchCount dispatchCount = new DispatchCount(users.size(), 0, tasks.getTotalElements(), 0,0,dispatchTaskRequest.getPerTaskDispatchLimit(), 0);// 任务分派统计
+
+        long dc = 0;
+        TaskStatus taskStatus = null;
+        $task:
+        for (Task task : tasks) {
+            taskStatus = getTaskStatus(task);
+            if (null==taskStatus) { //无法进行状态更新
+                continue $task;
             }
-            $user:{
-                for (UserDispatch userDispatch : userDispatches) {
-                    dispatchCount.ctdcIncrement(); // 当前任务分配数自增
-                    if (dispatchCount.isOverDispatchLimit()) { // 如果此次任务分配超过设定的上限
-                        break $user;
-                    }
-                    if (userDispatch.incrementIsInLimit()) { // 如果当前用户接受任务数未达上限
-                        dispatchCount.dcIncrement(); // 分配次数自增
-                        UserTask userTask = new UserTask();
-                        userTask.setTaskId(task.getTaskId());
-                        userTask.setUserId(userDispatch.getUserId());
-                        userTask.setTaskType(task.getTaskType());
-                        userTaskRepository.saveAndFlush(userTask);
-                        TaskRequest taskRequest = new TaskRequest();
-                        BeanUtils.copyProperties(task, taskRequest);
-                        taskService.update(taskRequest);
-                    }
+
+            dc = dispatchCount.getDispatchCount();
+            dispatchCount.setCurrentTaskDispatchCount(0); // 重置当前任务分配数
+            $user:
+            for (UserDispatch userDispatch : userDispatches) {
+                if (!dispatchCount.ctdcIncrementIsInLimit()) { // 如果此次任务分配超过设定的上限
+                    break $user;
                 }
+                if (userDispatch.incrementIsInLimit()) { // 如果当前用户接受任务数未达上限
+                    UserTask userTask = new UserTask();
+                    userTask.setTaskId(task.getTaskId());
+                    userTask.setUserId(userDispatch.getUserId());
+                    userTask.setTaskType(task.getTaskType());
+                    userTaskRepository.saveAndFlush(userTask);
+                    task.setStatus(taskStatus.getType()); // 更新task状态
+                    dispatchCount.dcIncrement(); // 分配次数自增
+                }
+            }
+
+            if (dispatchCount.getDispatchCount() > dc) { // 任务被分配了
                 dispatchCount.dtcIncrement();
             }
         }
-        return ResponseUtils.buildSuccessMessage("dispatched",dispatchCount.getCountInfo());
+
+        for(UserDispatch userDispatch : userDispatches){ // 统计有多少人接收了任务
+            if (userDispatch.getCurrentReceiveTask()>0){
+                dispatchCount.ducIncrement();
+            }
+        }
+        return ResponseUtils.buildSuccessMessage("dispatched", dispatchCount.getCountInfo());
     }
 
-    private static boolean setTaskStatus(Task task) {
-        boolean setTaskStatus = false;
-        switch (TaskStatus.findByType(task.getStatus())) {
-            case UN_DISPATCHED:
-                task.setStatus(TaskStatus.DISPATCHED.getType());
-                setTaskStatus = true;
-                break;
-            case DISPATCHED:
-                task.setStatus(TaskStatus.DISPATCH_TWICE.getType());
-                setTaskStatus = true;
-                break;
-            case DISPATCH_TWICE:
-                task.setStatus(TaskStatus.DISPATCH_TRIPLE.getType());
-                setTaskStatus = true;
-                break;
-            default:
-                break;
-        }
-        return setTaskStatus;
+    private static TaskStatus getTaskStatus(Task task) {
+        return TaskStatus.findByType(task.getTaskType());
     }
 
 
     @Data
     private class DispatchCount {
 
-        private int dispatchUserCount = 0; // 复合条件的用户数
-        private int dispatchTaskCount = 0; // 分派的任务数
-        private int dispatchCount = 0; // 总分派数
-        private int dispatchLimit = 0; // 每条任务最多分派数
-        private int taskCount = 0; // 任务总数
-        private int currentTaskDispatchCount = 0; // 当前任务分派数
+        private long dispatchUserCount = 0; // 分配到任务的用户数
+        private long dispatchTaskCount = 0; // 分派的任务数
+        private long dispatchCount = 0; // 总分派数
+        private long dispatchLimit = 0; // 每条任务最多分派数
+        private long taskCount = 0; // 任务总数
+        private long userCount = 0; // 用户总数
+        private long currentTaskDispatchCount = 0; // 当前任务分派数
 
         public DispatchCount() {
 
         }
 
-        public DispatchCount(int dispatchUserCount, int dispatchTaskCount, int dispatchCount, int dispatchLimit,int taskCount,int currentTaskDispatchCount) {
+        public DispatchCount(long userCount,long dispatchUserCount,long taskCount,long dispatchTaskCount,long dispatchCount, long dispatchLimit, long currentTaskDispatchCount) {
             this.dispatchUserCount = dispatchUserCount;
+            this.userCount = userCount;
             this.dispatchTaskCount = dispatchTaskCount;
             this.dispatchCount = dispatchCount;
             this.dispatchLimit = dispatchLimit;
@@ -161,11 +169,11 @@ public class UserTaskServiceImpl implements UserTaskService {
         }
 
         public double getUserLoadAvg() {
-            return new BigDecimal(dispatchCount).divide(new BigDecimal(dispatchUserCount==0?1:dispatchUserCount), 2, RoundingMode.HALF_UP).doubleValue();
+            return new BigDecimal(dispatchCount).divide(new BigDecimal(dispatchUserCount == 0 ? 1 : dispatchUserCount), 2, RoundingMode.HALF_UP).doubleValue();
         }
 
         public double getDispatchTaskAvg() {
-            return new BigDecimal(dispatchCount).divide(new BigDecimal(dispatchTaskCount==0?1:dispatchTaskCount), 2, RoundingMode.HALF_UP).doubleValue();
+            return new BigDecimal(dispatchCount).divide(new BigDecimal(dispatchTaskCount == 0 ? 1 : dispatchTaskCount), 2, RoundingMode.HALF_UP).doubleValue();
         }
 
         public void reset() {
@@ -174,47 +182,46 @@ public class UserTaskServiceImpl implements UserTaskService {
             dispatchCount = 0;
             dispatchLimit = 0;
             taskCount = 0;
+            userCount = 0;
             currentTaskDispatchCount = 0;
         }
 
-        public void reset(int dispatchUserCount, int dispatchTaskCount, int dispatchCount, int dispatchLimit,int taskCount,int currentTaskDispatchCount) {
-            dispatchUserCount = dispatchUserCount;
-            dispatchTaskCount = dispatchTaskCount;
-            dispatchCount = dispatchCount;
-            dispatchLimit = dispatchLimit;
-            taskCount = taskCount;
-            currentTaskDispatchCount = currentTaskDispatchCount;
+        public void reset(long taskCount,long dispatchTaskCount,long userCount,long dispatchUserCount,long dispatchCount, long dispatchLimit, long currentTaskDispatchCount) {
+            this.dispatchUserCount = dispatchUserCount;
+            this.dispatchTaskCount = dispatchTaskCount;
+            this.dispatchCount = dispatchCount;
+            this.dispatchLimit = dispatchLimit;
+            this.taskCount = taskCount;
+            this.userCount = userCount;
+            this.currentTaskDispatchCount = currentTaskDispatchCount;
         }
 
-        public int ducIncrement() {
+        public long ducIncrement() {
             return ++dispatchUserCount;
         }
 
-        public int dtcIncrement() {
+        public long dtcIncrement() {
             return ++dispatchTaskCount;
         }
 
-        public int dcIncrement() {
+        public long dcIncrement() {
             return ++dispatchCount;
         }
 
-        public int tcIncrement() { return ++taskCount; }
-
-        public int ctdcIncrement() { return ++currentTaskDispatchCount; }
-
-        public boolean isOverDispatchLimit(){
-            return currentTaskDispatchCount>dispatchLimit;
+        public boolean ctdcIncrementIsInLimit() {
+            return ++currentTaskDispatchCount <= dispatchLimit;
         }
 
         public JsonNode getCountInfo() {
             return JSONUtils.objectNode()
-                    .put("taskCount",getTaskCount())
-                    .put("dispatchTaskCount", getDispatchTaskCount())
+                    .put("userCount", getUserCount())
                     .put("dispatchUserCount", getDispatchUserCount())
-                    .put("dispatchCount", getDispatchCount())
-                    .put("dispatchLimit", getDispatchLimit())
                     .put("userLoadAvg", getUserLoadAvg())
-                    .put("dispatchTaskAvg", getDispatchTaskAvg());
+                    .put("taskCount", getTaskCount())
+                    .put("dispatchTaskCount", getDispatchTaskCount())
+                    .put("dispatchTaskAvg", getDispatchTaskAvg())
+                    .put("dispatchCount", getDispatchCount())
+                    .put("dispatchLimit", getDispatchLimit());
         }
     }
 }
