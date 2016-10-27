@@ -20,7 +20,7 @@ import java.util.List;
  * Created by dongwentao on 16/9/27.
  */
 @RestController
-@RequestMapping("/datamark/task")
+@RequestMapping("/task")
 public class TaskController extends WuKongController {
 
     @Autowired
