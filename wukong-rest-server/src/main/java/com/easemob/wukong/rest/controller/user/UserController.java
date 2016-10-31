@@ -84,7 +84,7 @@ public class UserController extends WuKongController {
         if(null!=user) {
             HttpSession session = request.getSession(true);
             ObjectNode _user = JSONUtils.objectNode("id", user.getId() + "", "name", user.getName(), "role", user.getRole() + "");
-            SessionUtils.setAttribute(SESSION_USER, _user);
+            SessionUtils.setAttribute(SESSION_USER, _user,SESSION_MAX_TIME);
             CookieUtils.saveCookie(request, response, COOKIE_USER, _user, COOKIE_MAX_TIME);
             return true;
         }

@@ -14,4 +14,5 @@ public interface WuKongConstants {
 
     // ------------------ time ---------------------
     int COOKIE_MAX_TIME=3600*24;
+    int SESSION_MAX_TIME=3600*24;
 }
