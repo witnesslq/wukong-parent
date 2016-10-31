@@ -24,7 +24,11 @@ public class UserDispatch{
         this.maxReceiveTask=maxReceiveTask;
     }
 
-    public boolean incrementIsInLimit(){
-        return ++currentReceiveTask<=maxReceiveTask;
+    public boolean crtIsInLimit(){
+        return currentReceiveTask<maxReceiveTask;
+    }
+
+    public long crtIncrement(){
+        return ++currentReceiveTask;
     }
 }

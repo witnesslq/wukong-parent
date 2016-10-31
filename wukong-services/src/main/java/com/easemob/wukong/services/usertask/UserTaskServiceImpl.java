@@ -111,18 +111,21 @@ public class UserTaskServiceImpl implements UserTaskService {
             dispatchCount.setCurrentTaskDispatchCount(0); // 重置当前任务分配数
             $user:
             for (UserDispatch userDispatch : userDispatches) {
-                if (!dispatchCount.ctdcIncrementIsInLimit()) { // 如果此次任务分配超过设定的上限
+                if (!dispatchCount.ctdcIsInLimit()) { // 如果此次任务分配超过设定的上限
                     break $user;
                 }
-                if (userDispatch.incrementIsInLimit()) { // 如果当前用户接受任务数未达上限
-                    UserTask userTask = new UserTask();
-                    userTask.setTaskId(task.getTaskId());
-                    userTask.setUserId(userDispatch.getUserId());
-                    userTask.setTaskType(task.getTaskType());
-                    userTaskRepository.saveAndFlush(userTask);
-                    task.setStatus(taskStatus.getType()); // 更新task状态
-                    dispatchCount.dcIncrement(); // 分配次数自增
+                if (!userDispatch.crtIsInLimit()) { // 如果当前用户接受任务数达上限
+                    continue $user;
                 }
+                UserTask userTask = new UserTask();
+                userTask.setTaskId(task.getTaskId());
+                userTask.setUserId(userDispatch.getUserId());
+                userTask.setTaskType(task.getTaskType());
+                userTaskRepository.saveAndFlush(userTask);
+                task.setStatus(taskStatus.getType()); // 更新task状态
+                userDispatch.crtIncrement(); // 当前用户接受任务数自增
+                dispatchCount.ctdcIncrement(); // 当前任务分配数自增
+                dispatchCount.dcIncrement(); // 分配次数自增
             }
 
             if (dispatchCount.getDispatchCount() > dc) { // 任务被分配了
@@ -208,8 +211,12 @@ public class UserTaskServiceImpl implements UserTaskService {
             return ++dispatchCount;
         }
 
-        public boolean ctdcIncrementIsInLimit() {
-            return ++currentTaskDispatchCount <= dispatchLimit;
+        public boolean ctdcIsInLimit() {
+            return currentTaskDispatchCount < dispatchLimit;
+        }
+
+        public long ctdcIncrement() {
+            return ++currentTaskDispatchCount;
         }
 
         public JsonNode getCountInfo() {
